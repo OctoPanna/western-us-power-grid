@@ -1,39 +1,64 @@
-import matplotlib.pyplot as plt
 import networkx as nx
+import random
 
-def draw_graph(G):
-    plt.figure(figsize=(10, 8))
-
+def calculate_edge_lengths(G):
     pos = nx.get_node_attributes(G, "pos")
+    print(pos)
+    for u, v in G.edges():
+        x1, y1 = pos[u]
+        x2, y2 = pos[v]
+        length = ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5
+        G[u][v]['length'] = length
+    return G
 
-    nx.draw(
-        G,
-        pos,
-        node_color="#9c0101",
-        node_size=3,
-        edge_color="grey",
-    )
+def assign_voltage(length):
+    if length > 120: return 345
+    elif length > 50: return 230
+    else: return 138
 
-    plt.title("Network Graph")
-    plt.show()
+def assign_capacity(voltage):
+    if voltage == 345: return random.uniform(500, 900)
+    if voltage == 230: return random.uniform(200, 400)
+    if voltage == 138: return random.uniform(70, 150)
+    return random.uniform(40, 100)
 
-def draw_graph_after_failure(G_before, failed_edges):
-    pos = nx.get_node_attributes(G_before, "pos")
+def assign_reactance(length_km, voltage):
+    X_ohm = 0.0004 * length_km
+    X_pu = X_ohm * (100 / (voltage ** 2))
+    return X_pu
+import random
 
-    plt.figure(figsize=(10, 8))
+def assign_node_loads(G, total_load=50_000):
+    weights = {n: random.random() for n in G.nodes()}
+    Z = sum(weights.values())
+    for n, w in weights.items():
+        G.nodes[n]["load_MW"] = (w / Z) * total_load
 
-    intact_edges = [e for e in G_before.edges() if e not in failed_edges and (e[1], e[0]) not in failed_edges]
-    nx.draw_networkx_edges(G_before, pos, edgelist=intact_edges, edge_color='grey', alpha=0.7)
+def assign_generators(G, num_generators=20, max_gen=2000):
+    gen_nodes = random.sample(list(G.nodes()), num_generators)
+    for n in G.nodes():
+        G.nodes[n]["gen_MW"] = 0.0
+    for n in gen_nodes:
+        G.nodes[n]["gen_MW"] = random.uniform(200, max_gen)
 
-    nx.draw_networkx_edges(G_before, pos, edgelist=failed_edges, edge_color='red', alpha=0.9)
+def assign_grid_attributes(G):
+    for u, v, data in G.edges(data=True):
+        length = data['length'] * 1000
+        
+        # voltage
+        V = assign_voltage(length)
+        data['voltage_kV'] = V
+        
+        # capacity
+        data['capacity_MW'] = assign_capacity(V)
+        
+        # reactance
+        data['reactance'] = assign_reactance(length, V)
 
-    failed_nodes = set()
-    for u, v in failed_edges:
-        failed_nodes.add(u)
-        failed_nodes.add(v)
-    node_colors = ["#9c0101" if n in failed_nodes else "#50bee6" for n in G_before.nodes()]
-    nx.draw_networkx_nodes(G_before, pos, node_color=node_colors, node_size=3)
+    # node loads
+    assign_node_loads(G)
 
-    plt.title("Network Graph After Cascade Failure")
-    plt.axis('off')
-    plt.show()
+    # generation
+    assign_generators(G)
+
+    return G
