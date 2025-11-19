@@ -17,7 +17,7 @@ def draw_graph(G):
     plt.title("Network Graph")
     plt.show()
 
-def draw_graph_after_failure(G_before, failed_edges):
+def draw_graph_after_failure(G_before, G_after, failed_edges, title):
     pos = nx.get_node_attributes(G_before, "pos")
 
     plt.figure(figsize=(10, 8))
@@ -29,11 +29,15 @@ def draw_graph_after_failure(G_before, failed_edges):
 
     failed_nodes = set()
     for u, v in failed_edges:
-        failed_nodes.add(u)
-        failed_nodes.add(v)
+        edges_u = G_after.edges(u)
+        edges_v = G_after.edges(v)
+        if len(list(edges_u)) == 0:
+            failed_nodes.add(u)
+        if len(list(edges_v)) == 0:
+            failed_nodes.add(v)
     node_colors = ["#9c0101" if n in failed_nodes else "#50bee6" for n in G_before.nodes()]
     nx.draw_networkx_nodes(G_before, pos, node_color=node_colors, node_size=3)
 
-    plt.title("Network Graph After Cascade Failure")
+    plt.title(title)
     plt.axis('off')
     plt.show()

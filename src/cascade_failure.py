@@ -1,7 +1,6 @@
 import time
 import random
 import numpy as np
-import networkx as nx
 
 def cascade_failure(graph, initial_failed_edges, threshold=0.5, max_seconds=300):
     start_time = time.time()
@@ -156,7 +155,7 @@ def cascade_simulation(G0, S_base=100.0, trip_threshold=1.0, max_iter=100, slack
     load_served_fraction = total_load_remaining / total_load_initial if total_load_initial > 0 else 1.0
     result = {
         'history': history,
-        'final_graph': G,
+        'graph': G,
         'initial_total_load_MW': total_load_initial,
         'final_total_load_MW': total_load_remaining,
         'load_served_fraction': load_served_fraction
