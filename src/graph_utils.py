@@ -28,24 +28,31 @@ def assign_reactance(length_km, voltage):
     return X_pu
 import random
 
-def assign_node_loads(G, total_load=50_000):
+def assign_node_loads(G, safety_factor=0.8, total_load=50_000):
     degrees = dict(G.degree())
     weights = {n: max(1e-3, deg) for n, deg in degrees.items()}
     Z = sum(weights.values())
     for n, w in weights.items():
-        G.nodes[n]["load_MW"] = (w / Z) * total_load
+        max_load = sum(G[n][v]['capacity_MW'] for v in G.neighbors(n))
+        G.nodes[n]["load_MW"] = min((w / Z) * total_load, max_load * safety_factor)
 
-def assign_generators(G, num_generators=20, max_gen=2000):
+def assign_generators(G, num_generators=20, safety_factor=0.8, max_gen=2000, degree_preference='high'):
     degrees = dict(G.degree())
     nodes = list(G.nodes())
 
     weights = [degrees[n] for n in nodes]
-    gen_nodes = random.choices(nodes, weights=weights, k=num_generators)
+
+    if degree_preference == 'high':
+        gen_nodes = random.choices(nodes, weights=weights, k=num_generators) # high degree preference
+    elif degree_preference == 'low':
+        gen_nodes = random.choices(nodes, weights=[1/w for w in weights], k=num_generators) # low degree preference
+
 
     for n in G.nodes():
         G.nodes[n]["gen_MW"] = 0.0
     for n in gen_nodes:
-        G.nodes[n]["gen_MW"] = random.uniform(200, max_gen)
+        incident_capacity = sum(G[n][v]['capacity_MW'] for v in G.neighbors(n))
+        G.nodes[n]["gen_MW"] = min(random.uniform(200, max_gen), incident_capacity * safety_factor)
 
 def total_generation_and_load(G):
     total_gen = sum(G.nodes[n].get('gen_MW', 0.0) for n in G.nodes())
@@ -62,7 +69,7 @@ def scale_generators_to_match_load(G):
             G.nodes[n]['gen_MW'] *= scale
     return G
 
-def assign_grid_attributes(G):
+def assign_grid_attributes(G, degree_preference):
     calculate_edge_lengths(G)
     for u, v, data in G.edges(data=True):
         length = data['length']
@@ -81,7 +88,7 @@ def assign_grid_attributes(G):
     assign_node_loads(G)
 
     # generation
-    assign_generators(G)
+    assign_generators(G, degree_preference=degree_preference)
 
     # scale generation to match load
     scale_generators_to_match_load(G)
