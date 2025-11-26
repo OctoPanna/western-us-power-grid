@@ -3,7 +3,6 @@ import random
 
 def calculate_edge_lengths(G):
     pos = nx.get_node_attributes(G, "pos")
-    print(pos)
     for u, v in G.edges():
         x1, y1 = pos[u]
         x2, y2 = pos[v]
@@ -28,7 +27,7 @@ def assign_reactance(length_km, voltage):
     return X_pu
 import random
 
-def assign_node_loads(G, safety_factor=0.8, total_load=50_000):
+def assign_node_loads(G, safety_factor=0.5, total_load=50_000):
     degrees = dict(G.degree())
     weights = {n: max(1e-3, deg) for n, deg in degrees.items()}
     Z = sum(weights.values())
@@ -36,17 +35,13 @@ def assign_node_loads(G, safety_factor=0.8, total_load=50_000):
         max_load = sum(G[n][v]['capacity_MW'] for v in G.neighbors(n))
         G.nodes[n]["load_MW"] = min((w / Z) * total_load, max_load * safety_factor)
 
-def assign_generators(G, num_generators=20, safety_factor=0.8, max_gen=2000, degree_preference='high'):
-    degrees = dict(G.degree())
+def assign_generators(G, num_generators=20, safety_factor=0.5, max_gen=2000):
+    betweenness = dict(nx.betweenness_centrality(G, normalized=True))
     nodes = list(G.nodes())
 
-    weights = [degrees[n] for n in nodes]
+    weights = [betweenness[n] for n in nodes]
 
-    if degree_preference == 'high':
-        gen_nodes = random.choices(nodes, weights=weights, k=num_generators) # high degree preference
-    elif degree_preference == 'low':
-        gen_nodes = random.choices(nodes, weights=[1/w for w in weights], k=num_generators) # low degree preference
-
+    gen_nodes = random.choices(nodes, weights=weights, k=num_generators) # high degree preference
 
     for n in G.nodes():
         G.nodes[n]["gen_MW"] = 0.0
@@ -69,7 +64,7 @@ def scale_generators_to_match_load(G):
             G.nodes[n]['gen_MW'] *= scale
     return G
 
-def assign_grid_attributes(G, degree_preference):
+def assign_grid_attributes(G):
     calculate_edge_lengths(G)
     for u, v, data in G.edges(data=True):
         length = data['length']
@@ -79,7 +74,7 @@ def assign_grid_attributes(G, degree_preference):
         data['voltage_kV'] = V
         
         # capacity
-        data['capacity_MW'] = assign_capacity(V)
+        data['capacity_MW'] = assign_capacity(V) * 20
         
         # reactance
         data['reactance'] = assign_reactance(length, V)
@@ -88,7 +83,7 @@ def assign_grid_attributes(G, degree_preference):
     assign_node_loads(G)
 
     # generation
-    assign_generators(G, degree_preference=degree_preference)
+    assign_generators(G)
 
     # scale generation to match load
     scale_generators_to_match_load(G)
