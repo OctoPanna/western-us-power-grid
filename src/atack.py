@@ -74,6 +74,27 @@ def high_load_capacity_ratio_node_attack(G0, number_of_nodes=1):
     
     return failed_nodes
 
+def high_load_capacity_ratio_and_degree_node_attack(G0, number_of_nodes=1):
+    G = G0.copy()
+    node_scores = {}
+    for n in G.nodes():
+        load = G.nodes[n]['load']
+        capacity = G.nodes[n]['capacity']
+        degree = G.degree(n)
+        ratio = load / capacity
+        score = ratio * degree
+        node_scores[n] = score
+    
+    sorted_nodes = sorted(node_scores.items(), key=lambda x: x[1], reverse=True)
+    
+    failed_nodes = []
+    for i in range(number_of_nodes):
+        node = sorted_nodes[i][0]
+        G.remove_node(node)
+        failed_nodes.append(node)
+    
+    return failed_nodes
+
 #----------------------------------------------------------------
 # DC model atack strategies
 #----------------------------------------------------------------
