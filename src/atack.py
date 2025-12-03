@@ -1,4 +1,5 @@
 import random
+import networkx as nx
 
 def random_node_attack(G0, number_of_nodes=1):
     G = G0.copy()
@@ -10,6 +11,72 @@ def random_node_attack(G0, number_of_nodes=1):
     
     return failed_nodes
 
+# high degree node attack = high capacity node attack
+def high_degree_node_attack(G0, number_of_nodes=1):
+    G = G0.copy()
+    node_degrees = dict(G.degree())
+    sorted_nodes = sorted(node_degrees.items(), key=lambda x: x[1], reverse=True)
+    
+    failed_nodes = []
+    for i in range(number_of_nodes):
+        node = sorted_nodes[i][0]
+        G.remove_node(node)
+        failed_nodes.append(node)
+    
+    return failed_nodes
+
+# high betweenness node attack
+def high_betweenness_node_attack(G0, number_of_nodes=1):
+    G = G0.copy()
+    betweenness = nx.betweenness_centrality(G, normalized=True)
+    sorted_nodes = sorted(betweenness.items(), key=lambda x: x[1], reverse=True)
+    
+    failed_nodes = []
+    for i in range(number_of_nodes):
+        node = sorted_nodes[i][0]
+        G.remove_node(node)
+        failed_nodes.append(node)
+    
+    return failed_nodes
+
+def high_load_node_attack(G0, number_of_nodes=1):
+    G = G0.copy()
+    node_loads = {}
+    for n in G.nodes():
+        node_loads[n] = G.nodes[n]['load']
+    
+    sorted_nodes = sorted(node_loads.items(), key=lambda x: x[1], reverse=True)
+    
+    failed_nodes = []
+    for i in range(number_of_nodes):
+        node = sorted_nodes[i][0]
+        G.remove_node(node)
+        failed_nodes.append(node)
+    
+    return failed_nodes
+
+def high_load_capacity_ratio_node_attack(G0, number_of_nodes=1):
+    G = G0.copy()
+    node_ratios = {}
+    for n in G.nodes():
+        load = G.nodes[n]['load']
+        capacity = G.nodes[n]['capacity']
+        ratio = load / capacity
+        node_ratios[n] = ratio
+    
+    sorted_nodes = sorted(node_ratios.items(), key=lambda x: x[1], reverse=True)
+    
+    failed_nodes = []
+    for i in range(number_of_nodes):
+        node = sorted_nodes[i][0]
+        G.remove_node(node)
+        failed_nodes.append(node)
+    
+    return failed_nodes
+
+#----------------------------------------------------------------
+# DC model atack strategies
+#----------------------------------------------------------------
 def high_capacity_node_attack(G0, number_of_nodes=1):
     G = G0.copy()
     node_capacities = {}
@@ -75,19 +142,6 @@ def high_capacity_high_voltage_node_attack(G0, number_of_nodes=1):
         node_scores[n] = score
     
     sorted_nodes = sorted(node_scores.items(), key=lambda x: x[1], reverse=True)
-    
-    failed_nodes = []
-    for i in range(number_of_nodes):
-        node = sorted_nodes[i][0]
-        G.remove_node(node)
-        failed_nodes.append(node)
-    
-    return failed_nodes
-
-def high_degree_node_attack(G0, number_of_nodes=1):
-    G = G0.copy()
-    node_degrees = dict(G.degree())
-    sorted_nodes = sorted(node_degrees.items(), key=lambda x: x[1], reverse=True)
     
     failed_nodes = []
     for i in range(number_of_nodes):
