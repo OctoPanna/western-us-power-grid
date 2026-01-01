@@ -66,3 +66,21 @@ def draw_graph_after_failure(G, title):
     plt.title(title)
     plt.axis('off')
     plt.show()
+
+def draw_graph_with_node_highlighted(G, node_to_highlight):
+    plt.figure(figsize=(10, 8))
+
+    pos = nx.get_node_attributes(G, "pos")
+
+    node_colors = ['#9c0101' if node in node_to_highlight else '#50bee6' for node in G.nodes()]
+
+    nx.draw(
+        G,
+        pos,
+        node_color=node_colors,
+        node_size=3,
+        edge_color="grey",
+    )
+
+    plt.title("Network Graph with highlighted nodes: {}".format(node_to_highlight))
+    plt.show()
