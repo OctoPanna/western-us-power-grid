@@ -18,7 +18,7 @@ def load_data(edges_path="data/edges.csv", nodes_path="data/nodes.csv"):
 
     return G
 
-def assign_atribute(edges_path="data/edges.csv", nodes_path="data/nodes.csv"):
+def assign_atributtes(edges_path="data/edges.csv", nodes_path="data/nodes.csv"):
     edges = pd.read_csv(edges_path)
     nodes = pd.read_csv(nodes_path)
 
