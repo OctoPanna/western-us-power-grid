@@ -34,17 +34,14 @@ def high_degree_node_attack(G0, number_of_nodes=1):
     return failed_nodes
 
 # high betweenness node attack
-def high_betweenness_node_attack(G0, number_of_nodes=1):
-    G = G0.copy()
+def high_betweenness_node_attack(G, number_of_nodes=1, k=None):
     intact = intact_nodes(G)
-
-    betweenness = nx.betweenness_centrality(G.subgraph(intact), normalized=True)
-    sorted_nodes = sorted(betweenness.items(), key=lambda x: x[1], reverse=True)
-
-    failed_nodes = []
-    for node, _ in sorted_nodes[:number_of_nodes]:
-        G.remove_node(node)
-        failed_nodes.append(node)
+    betweenness = nx.betweenness_centrality(G.subgraph(intact), normalized=True, k=k)
+    failed_nodes = sorted(
+        betweenness,
+        key=betweenness.get,
+        reverse=True
+    )[:number_of_nodes]
 
     return failed_nodes
 
